@@ -20,7 +20,6 @@ Clear-Host
   $hashCount, $noDataCount : counters that are kept for debugging purposes
 #>
 ##################################################
-param([String]$inFile)
 $addressHash = @{}
 $noDataHash = @{}
 $finalStudentBalanceHash = @{}
@@ -36,30 +35,44 @@ $noDataCount =0
   Takes the .csv specified at head of script and parses out addresses that have adequate data and adds them to a hashtable.
   This function also parses out data with a lack of address and adds them to a seperate hashtable
 #>
-
 function fileImport{
 
-  Import-Csv $inFile -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
+Param(
+  [String]$filePath = $args
+)
+
+if ($filePath.Equals("")){
+    $filePath = Read-Host -Prompt "Please enter the file path including the file"
+}
+
+
+
+#    $inFile = Import-Csv "D:\StudentLunchBalance\massagedStudentBalance.csv" -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
+    $inFile = Import-Csv $filePath  -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
 
 foreach ($studentLine in $inFile){
 
-        # converts balance from pennies to dollars
-        $studentLine.Balance = $studentLine.Balance/100
 
-        #  sorts out null values of addresses
-        if ($($studentLine).Address -ne ""){
+if ($studentLine.Balance -ne ""){
+  # converts balance from pennies to dollars
+  $studentLine.Balance = $studentLine.Balance/100
 
-            $addressHash[$($studentLine).Address.Trim()] += @($($studentLine))
-            $hashCount++
-        }
-        else{
-            $noDataHash[$($studentLine).StudentID.Trim()] += @($($studentLine))
+  #  sorts out null values of addresses
+  if ($($studentLine).Address -ne ""){
+
+      $addressHash[$studentLine.Address] += @($studentLine)
+      $hashCount++
+  }
+}        else{
+            $noDataHash[$studentLine.StudentID] += @($studentLine)
             $noDataCount++
 
         }
 
     }
-
+    foreach ($addressKey in $addressHash){
+      $addressHash.Get_Item($($addressKey))
+    }
 }
 <#
   Function: createKeyArray
@@ -173,9 +186,8 @@ function exportHashtableToCSV{
     return $finalStudentBalanceHash
 }
 
-fileImport
-exportHashtableToCSV
 
+fileImport
 <#  Console output for debugging
 
 Write-Host "############ FULL DATA HASH START ############"
