@@ -9,8 +9,6 @@
 # Author: Peter Bitante
 # Year: 2016-2017
 ###################################################################################>
-
-
 Clear-Host
 <#
   Parameters:
@@ -20,14 +18,15 @@ Clear-Host
   $hashCount, $noDataCount : counters that are kept for debugging purposes
 #>
 ##################################################
-param([String]$inFile)
 $addressHash = @{}
 $noDataHash = @{}
 $finalStudentBalanceHash = @{}
 $hashCount =0
 $noDataCount =0
 ##################################################
-
+{
+  param([String]$inFile)
+}
 
 
 <#
@@ -39,7 +38,7 @@ $noDataCount =0
 
 function fileImport{
 
-  Import-Csv $inFile -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
+  Import-Csv -Path $inFile -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
 
 foreach ($studentLine in $inFile){
 
