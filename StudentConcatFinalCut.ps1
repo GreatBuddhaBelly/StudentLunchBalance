@@ -38,13 +38,14 @@ function fileImport{
 Param(
   [String]$filePath = $args
 )
-
-if ($filePath.Equals("")){
     $filePath = Read-Host -Prompt "Please enter the file path including the file"
-}
 
+    if ($filePath.Equals("")){
+      Write-Host "  You did not enter a file path. Please run the script again."
 
-
+    }
+    else {
+      exportHashtableToCSV
 #    $inFile = Import-Csv "D:\StudentLunchBalance\massagedStudentBalance.csv" -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
     $inFile = Import-Csv $filePath  -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
 
@@ -71,7 +72,9 @@ if ($studentLine.Balance -ne ""){
     foreach ($addressKey in $addressHash){
       $addressHash.Get_Item($($addressKey))
     }
+  }
 }
+
 <#
   Function: createKeyArray
   Creates an array of all addresses with sufficient data, returns the array to be used as keys
