@@ -11,7 +11,6 @@
 ###################################################################################>
 
 
-Clear-Host
 <#
   Parameters:
   $inFile : imports the .csv of the specified path and sorts them according to address in descending order
@@ -22,12 +21,13 @@ Clear-Host
 $addressHash = @{}
 $noDataHash = @{}
 $finalStudentBalanceHash = @{}
+$studentsArray = @()
 $hashCount =0
 $noDataCount =0
 ##################################################
 
 
-
+Clear-Host
 <#
   Function: fileImport
   Takes the .csv specified at head of script and parses out addresses that have adequate data and adds them to a hashtable.
@@ -38,41 +38,38 @@ function fileImport{
 Param(
   [String]$filePath = $args
 )
-    $filePath = Read-Host -Prompt "Please enter the file path including the file"
 
     if ($filePath.Equals("")){
-      Write-Host "  You did not enter a file path. Please run the script again."
+      $filePath = Read-Host -Prompt "Please enter the file path including the file"
 
+        if ($filePath.Equals("")){
+          Write-Host "  You did not enter a file path. Please run the script again."
+        }
     }
-    else {
-      exportHashtableToCSV
 #    $inFile = Import-Csv "D:\StudentLunchBalance\massagedStudentBalance.csv" -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
-    $inFile = Import-Csv $filePath  -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
+    $inFile = Import-Csv $filePath -Header StudentID, FirstName, LastName, Address, PhoneNumber, Balance | sort Address -Descending
+    foreach ($studentLine in $inFile){
 
-foreach ($studentLine in $inFile){
 
-
-if ($studentLine.Balance -ne ""){
-  # converts balance from pennies to dollars
-  $studentLine.Balance = $studentLine.Balance/100
+      if ($studentLine.Balance -ne ""){
+        # converts balance from pennies to dollars
+        $studentLine.Balance = $studentLine.Balance/100
 
   #  sorts out null values of addresses
-  if ($($studentLine).Address -ne ""){
+  if ($studentLine.Address -ne ""){
 
       $addressHash[$studentLine.Address] += @($studentLine)
       $hashCount++
   }
-}        else{
+}
+else{
             $noDataHash[$studentLine.StudentID] += @($studentLine)
             $noDataCount++
 
         }
 
     }
-    foreach ($addressKey in $addressHash){
-      $addressHash.Get_Item($($addressKey))
-    }
-  }
+  return $addressHash
 }
 
 <#
@@ -80,8 +77,11 @@ if ($studentLine.Balance -ne ""){
   Creates an array of all addresses with sufficient data, returns the array to be used as keys
 #>
 function createKeyArray{
+    $keysArray = @()
 
-    $keysArray = @($addressHash.Keys)
+    foreach ($address in $addressHash.Keys){
+            $keysArray += $address
+          }
     return $keysArray
 }
 
@@ -105,43 +105,6 @@ function calculateBalance{
 }
 
 <#
-  Function: getStudentIDs
-  Creates an array of student IDs with the given key
-#>
-function getStudentIDs{
-    param( [String]$addressIn )
-
-    $students = $addressHash.Get_Item($addressIn)
-
-    $studentIDs = @()
-
-    foreach ($studentObject in $students){
-
-        $studentIDs += $studentObject.StudentID
-
-    }
-    return $studentIDs
-}
-<#
-  Function: getPhoneNumbers
-  Creates an array of phone numbers with the given key
-#>
-function getPhoneNumbers{
-    param( [String]$addressIn )
-
-    $students = $addressHash.Get_Item($addressIn)
-
-    $phoneNumbers = @()
-
-    foreach ($studentObject in $students){
-
-        $phoneNumbers += $studentObject.PhoneNumber
-
-    }
-    return $phoneNumbers
-}
-
-<#
   Function: hashSearch
   Uses createKeyArray to create an array of all addresses that have sufficient data. Then
   iterates through the array and uses the calculateBalance function with given the parameter
@@ -151,38 +114,31 @@ function getPhoneNumbers{
 function hashSearch{
 
     $keys = createKeyArray
-        foreach ($keyValue in $keys){
-          Write-Host "`n `n`  $keyValue"
-        $finalBalance = calculateBalance $keyValue
-        $studentIDs = getStudentIDs $keyValue
-        $studentPhoneNumbers = getPhoneNumbers $keyValue
-        $finalStudentBalanceHash.Add($keyValue, $studentObject)
-   }
-   return $finalStudentBalanceHash
-}
+    foreach ($key in $keys){
 
-<#
-  Function: exportCSV
-  Gets the values of the data received and exports them column-based into a .csv
-#>
-function exportHashtableToCSV{
+    $addressTotalBalance = @()
 
-    hashSearch
+        foreach ($student in $addressHash.Get_Item($key)){
 
-    [array]$keys = createKeyArray
-
-    for ($iter = 0; $iter -lt $keys.Count; $iter++){
-
-        [String]$searchKey = $keys[$iter]
-
-        $finalStudentBalanceHash.Get_Item($searchKey)
-
+        $studentAddress = $($student).Address
+            
+            Write-Host "  Student object:" $student.FirstName " " $student.LastName
+            Write-Host "  Student Address:" $studentAddress `n
+            
+        }
+    
     }
     return $finalStudentBalanceHash
-}
+   }
+
+
+##################################################### FileImport works as a function, must get individual student objects out of hashtable to
+##################################################### write to output .csv file
 
 
 fileImport
+hashSearch
+
 <#  Console output for debugging
 Write-Host "############ FULL DATA HASH START ############"
 $addressHash
